@@ -21,7 +21,7 @@ Key points to emphasize:
 - total supply is 1,361,867,964
 - Recently launched on major CEXs (MEXC and LBank)
 
-Respond in a friendly, professional, and optimistic tone. Keep responses concise but informative.
+Respond in a friendly, professional, and optimistic tone. Keep responses concise, short just address the query.
 `;
 
 // Helper function to safely send reply with slow mode handling

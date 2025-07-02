@@ -10,10 +10,6 @@ const RATE_LIMIT_WINDOW = 30000; // 30 seconds
 const MAX_REQUESTS_PER_USER = 2; // Max 2 requests per 30 seconds per user
 const userRateLimit = new Map();
 
-// Bot information - will be set dynamically
-let BOT_USERNAME = '';
-let botInfo = null;
-
 // Qubetics context for all responses
 const QUBETICS_CONTEXT = `
 **Qubetics: The World's First Layer 1, Web3 Aggregated Ecosystem That Unites Leading Blockchains Including Bitcoin, Ethereum, Solana & More. Recently launched on MEXC and LBank CEXs, no DEX yet.**
@@ -146,40 +142,59 @@ async function callGeminiAPI(userMessage) {
   }
 }
 
-// Initialize bot and get bot info
-async function initializeBot() {
+// Function to check if bot is mentioned (using the working approach)
+async function isBotMentioned(ctx) {
   try {
-    // Get bot information
-    botInfo = await bot.telegram.getMe();
-    BOT_USERNAME = botInfo.username;
+    // Get bot info fresh each time (like the working bot)
+    const botInfo = await bot.telegram.getMe();
+    const botUsername = botInfo.username;
+    const message = ctx.message;
     
-    console.log(`🤖 Bot initialized successfully!`);
-    console.log(`📋 Bot ID: ${botInfo.id}`);
-    console.log(`👤 Bot Username: @${BOT_USERNAME}`);
-    console.log(`📝 Bot Name: ${botInfo.first_name}`);
+    if (!message.entities) return false;
     
-    // Set commands after getting bot info
-    await bot.telegram.setMyCommands([
-      { command: 'help', description: 'Learn about TICS AI and how to use it' },
-      { command: 'about', description: 'About Qubetics project' },
-      { command: 'test', description: 'Test if bot is working' }
-    ]);
+    const mentions = message.entities.filter(entity => 
+      entity.type === 'mention' || entity.type === 'text_mention'
+    );
     
-    return true;
+    for (const mention of mentions) {
+      if (mention.type === 'mention') {
+        const mentionedUsername = message.text.substring(
+          mention.offset + 1, 
+          mention.offset + mention.length
+        );
+        if (mentionedUsername.toLowerCase() === botUsername.toLowerCase()) {
+          return true;
+        }
+      } else if (mention.type === 'text_mention' && mention.user) {
+        if (mention.user.username && mention.user.username.toLowerCase() === botUsername.toLowerCase()) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   } catch (error) {
-    console.error('Failed to initialize bot:', error.message);
+    console.error('Error checking bot mention:', error);
     return false;
   }
 }
 
+// Commands setup
+bot.telegram.setMyCommands([
+  { command: 'help', description: 'Learn about TICS AI and how to use it' },
+  { command: 'about', description: 'About Qubetics project' },
+  { command: 'test', description: 'Test if bot is working' }
+]);
+
 bot.start(async (ctx) => {
+  const botInfo = await bot.telegram.getMe();
   const welcomeMessage = `
 🤖 *TICS AI - Your Qubetics Assistant*
 
 Hello! I'm TICS AI, here to help you learn about Qubetics! 
 
 🚀 **How to use me:**
-• Tag me in any message: @${BOT_USERNAME}
+• Tag me in any message: @${botInfo.username}
 • Ask me anything about Qubetics
 • I'll provide helpful insights about our ecosystem
 
@@ -192,11 +207,12 @@ _Powered by Gemini 2.0 Flash_ ⚡
 });
 
 bot.command('help', async (ctx) => {
+  const botInfo = await bot.telegram.getMe();
   const helpMessage = `
 🤖 *TICS AI Help*
 
 **How to interact with me:**
-• Tag me: @${BOT_USERNAME} [your question]
+• Tag me: @${botInfo.username} [your question]
 • Ask about Qubetics features, technology, or roadmap
 • Get insights about our Layer 1 ecosystem
 
@@ -236,110 +252,147 @@ _Building the future of interconnected blockchain ecosystems_ 🌐
   await safeReply(ctx, aboutMessage, { parse_mode: 'Markdown' });
 });
 
-// Test command to verify bot is working
 bot.command('test', async (ctx) => {
+  const botInfo = await bot.telegram.getMe();
+  const chatType = ctx.chat.type;
   const testMessage = `
 ✅ *Bot Status: ONLINE*
 
 🤖 **Bot Info:**
-• Username: @${BOT_USERNAME}
-• ID: ${botInfo?.id || 'Unknown'}
-• Name: ${botInfo?.first_name || 'Unknown'}
+• Username: @${botInfo.username}
+• ID: ${botInfo.id}
+• Name: ${botInfo.first_name}
+• Chat Type: ${chatType}
 
 🔧 **Functionality:**
 • Mention detection: Working
 • Rate limiting: Active
 • Gemini AI: Connected
 
-💬 **Try mentioning me:** @${BOT_USERNAME} What is Qubetics?
+💬 **How to use in ${chatType}:**
+${chatType === 'private' 
+  ? '• Just type your question directly\n• Example: "What is Qubetics?"' 
+  : `• Mention me: @${botInfo.username} [question]\n• Example: "@${botInfo.username} What is Qubetics?"\n• Or reply to my messages`
+}
   `.trim();
   
   await safeReply(ctx, testMessage, { parse_mode: 'Markdown' });
 });
 
-// Enhanced mention detection
-bot.on('text', async (ctx) => {
-  // Skip if bot username is not yet initialized
-  if (!BOT_USERNAME) {
-    console.log('Bot username not initialized yet, skipping message processing');
-    return;
-  }
-  
-  const message = ctx.message.text;
+// Handle ALL messages (using the working approach)
+bot.on('message', async (ctx) => {
+  const message = ctx.message;
+  const chatId = ctx.chat.id;
+  const messageText = message.text;
+  const userName = ctx.from.first_name || ctx.from.username || 'Anon User';
   const userId = ctx.from.id;
   
-  console.log(`📨 Message received: "${message}"`);
-  console.log(`🔍 Looking for username: @${BOT_USERNAME}`);
-  console.log(`📋 Entities:`, ctx.message.entities);
+  // Skip if no text
+  if (!messageText) return;
   
-  // Enhanced mention detection
-  const botMentioned = 
-    message.includes(`@${BOT_USERNAME}`) || 
-    (ctx.message.entities && ctx.message.entities.some(entity => {
-      if (entity.type === 'mention') {
-        const mention = message.substring(entity.offset, entity.offset + entity.length);
-        return mention === `@${BOT_USERNAME}`;
-      }
-      return false;
-    })) ||
-    // Also check for direct replies to bot messages
-    (ctx.message.reply_to_message && ctx.message.reply_to_message.from.id === botInfo?.id);
+  // Get bot info
+  const botInfo = await bot.telegram.getMe();
+  const botUsername = botInfo.username;
   
-  if (!botMentioned) {
-    console.log('❌ Bot not mentioned, ignoring message');
-    return;
-  }
+  // Determine chat type and mention status
+  const isGroupChat = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
+  const isPrivateChat = ctx.chat.type === 'private';
+  const mentioned = await isBotMentioned(ctx);
   
-  console.log('✅ Bot mentioned, processing...');
+  console.log(`📨 Message from ${userName} in ${ctx.chat.type}: "${messageText}"`);
+  console.log(`🔍 Bot username: @${botUsername}`);
+  console.log(`👥 Group: ${isGroupChat}, Private: ${isPrivateChat}, Mentioned: ${mentioned}`);
   
-  // Check rate limit
-  if (isRateLimited(userId)) {
-    console.log(`⏱️ Rate limited user: ${userId}`);
-    await safeReply(ctx, '⏱️ Please wait a moment before asking another question!', {
-      reply_to_message_id: ctx.message.message_id
-    });
-    return;
-  }
-  
-  // Extract user question (remove the mention)
-  const userQuestion = message.replace(`@${BOT_USERNAME}`, '').replace(/^@\w+\s*/, '').trim();
-  
-  if (!userQuestion) {
-    await safeReply(ctx, '👋 Hi! Ask me anything about Qubetics! For example: "What makes Qubetics unique?"', {
-      reply_to_message_id: ctx.message.message_id
-    });
-    return;
-  }
-  
-  console.log(`💭 Processing question: "${userQuestion}"`);
-  
-  // Show typing
-  ctx.sendChatAction('typing').catch(() => {});
-  
-  try {
-    const aiResponse = await callGeminiAPI(userQuestion);
+  // Only respond in private chats or when mentioned in groups
+  if (isPrivateChat || (isGroupChat && mentioned)) {
+    console.log('✅ Processing message...');
     
-    await safeReply(ctx, `🤖 *TICS AI:*\n\n${aiResponse}`, {
-      parse_mode: 'Markdown',
-      reply_to_message_id: ctx.message.message_id
-    });
-    
-    console.log(`✅ Response sent to user ${userId}`);
-    
-  } catch (error) {
-    console.error(`❌ AI response error for user ${userId}:`, error.message);
-    
-    let errorMsg = '🤖 *TICS AI:*\n\n';
-    if (error.message.includes('API error')) {
-      errorMsg += '⚠️ I\'m having trouble connecting to my knowledge base. Please try again in a moment!';
-    } else {
-      errorMsg += '💭 I\'m thinking hard about that question! Please try rephrasing or ask me something else about Qubetics.';
+    // Check rate limit
+    if (isRateLimited(userId)) {
+      console.log(`⏱️ Rate limited user: ${userId}`);
+      await safeReply(ctx, '⏱️ Please wait a moment before asking another question!', {
+        reply_to_message_id: message.message_id
+      });
+      return;
     }
     
-    await safeReply(ctx, errorMsg, {
-      parse_mode: 'Markdown',
-      reply_to_message_id: ctx.message.message_id
-    });
+    // Extract user question (remove mention if in group)
+    let userQuestion = messageText;
+    if (isGroupChat) {
+      userQuestion = messageText.replace(`@${botUsername}`, '').replace(/^@\w+\s*/, '').trim();
+    }
+    
+    if (!userQuestion) {
+      const helpText = isPrivateChat 
+        ? '👋 Hi! Ask me anything about Qubetics! For example: "What makes Qubetics unique?"'
+        : `👋 Hi! Ask me anything about Qubetics! For example: "@${botUsername} What makes Qubetics unique?"`;
+      
+      await safeReply(ctx, helpText, {
+        reply_to_message_id: message.message_id
+      });
+      return;
+    }
+    
+    console.log(`💭 Processing question: "${userQuestion}"`);
+    
+    try {
+      // Show typing
+      ctx.sendChatAction('typing').catch(() => {});
+      
+      const aiResponse = await callGeminiAPI(userQuestion);
+      
+      await safeReply(ctx, `🤖 *TICS AI:*\n\n${aiResponse}`, {
+        parse_mode: 'Markdown',
+        reply_to_message_id: message.message_id
+      });
+      
+      console.log(`✅ Response sent to user ${userId}`);
+      
+    } catch (error) {
+      console.error(`❌ AI response error for user ${userId}:`, error.message);
+      
+      let errorMsg = '🤖 *TICS AI:*\n\n';
+      if (error.message.includes('API error')) {
+        errorMsg += '⚠️ I\'m having trouble connecting to my knowledge base. Please try again in a moment!';
+      } else {
+        errorMsg += '💭 I\'m thinking hard about that question! Please try rephrasing or ask me something else about Qubetics.';
+      }
+      
+      await safeReply(ctx, errorMsg, {
+        parse_mode: 'Markdown',
+        reply_to_message_id: message.message_id
+      });
+    }
+  } else {
+    console.log('❌ Not responding - group message without mention');
+  }
+});
+
+// Handle bot being added to groups
+bot.on('new_chat_members', async (ctx) => {
+  const botInfo = await bot.telegram.getMe();
+  const newMembers = ctx.message.new_chat_members;
+  const botAdded = newMembers.some(member => member.id === botInfo.id);
+  
+  if (botAdded) {
+    console.log(`🎉 Bot added to group: ${ctx.chat.title} (${ctx.chat.id})`);
+    
+    const welcomeMessage = `
+🤖 *TICS AI joined the chat!*
+
+Hello everyone! I'm TICS AI, your Qubetics assistant! 
+
+🚀 **How to use me in groups:**
+• Mention me: @${botInfo.username} [your question]
+• Reply to my messages
+• Ask about Qubetics, our ecosystem, and recent developments
+
+💡 **Quick start:** @${botInfo.username} What makes Qubetics special?
+
+_Ready to help with all your Qubetics questions!_ 💎
+    `.trim();
+    
+    await safeReply(ctx, welcomeMessage, { parse_mode: 'Markdown' });
   }
 });
 
@@ -356,27 +409,12 @@ bot.catch(async (err, ctx) => {
   }
 });
 
-// Launch bot with proper initialization
-async function startBot() {
-  console.log('🚀 Starting TICS AI Bot...');
-  
-  // Initialize bot and get info
-  const initialized = await initializeBot();
-  if (!initialized) {
-    console.error('❌ Failed to initialize bot. Exiting...');
-    process.exit(1);
-  }
-  
-  // Launch the bot
-  await bot.launch();
-  
+// Launch bot
+bot.launch().then(() => {
   console.log('🤖 TICS AI Bot is running!');
-  console.log(`💬 Tag @${BOT_USERNAME} to interact`);
+  console.log('💬 Tag the bot to interact in groups');
   console.log(`🕒 Rate limit: ${MAX_REQUESTS_PER_USER} requests per ${RATE_LIMIT_WINDOW/1000} seconds`);
-}
-
-// Start the bot
-startBot().catch(console.error);
+}).catch(console.error);
 
 // Graceful shutdown
 const shutdown = (signal) => {

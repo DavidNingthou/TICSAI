@@ -147,8 +147,8 @@ async function callGeminiAPI(userMessage) {
 
 // Commands setup
 bot.telegram.setMyCommands([
-  { command: 'help', description: 'Learn about TICS AI and how to use it' },
-  { command: 'about', description: 'About Qubetics project' }
+  { command: 'help', description: 'Learn about TICS AI and how to use it' }
+  
 ]);
 
 bot.start(async (ctx) => {

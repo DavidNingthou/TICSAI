@@ -21,7 +21,7 @@ Key points to emphasize:
 - total supply is 1,361,867,964
 - Recently launched on major CEXs (MEXC and LBank)
 
-Respond in a friendly, professional, and optimistic tone. Keep responses concise, short just address the query.
+Respond in a friendly, professional, and optimistic tone. Keep responses concise, short, just address the query.
 `;
 
 // Helper function to safely send reply with slow mode handling
@@ -82,7 +82,7 @@ setInterval(() => {
 // Function to call Gemini API
 async function callGeminiAPI(userMessage) {
   try {
-    const prompt = `${QUBETICS_CONTEXT}\n\nUser Question: ${userMessage}\n\nProvide a positive and informative response about Qubetics:`;
+    const prompt = `${QUBETICS_CONTEXT}\n\nUser Question: ${userMessage}`;
     
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',

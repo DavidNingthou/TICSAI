@@ -11,7 +11,7 @@ const MAX_REQUESTS_PER_USER = 2; // Max 2 requests per 30 seconds per user
 const userRateLimit = new Map();
 
 // Bot information
-const BOT_USERNAME = 'your_bot_username'; // Replace with your actual bot username
+const BOT_USERNAME = 'TicsAIbot'; // Replace with your actual bot username
 
 // Qubetics context for all responses
 const QUBETICS_CONTEXT = `

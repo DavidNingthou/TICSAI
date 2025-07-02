@@ -17,7 +17,8 @@ const QUBETICS_CONTEXT = `
 You are TICS AI, an AI assistant for the Qubetics project. Your role is to provide answers while maintaining accuracy.
 - Raised over 18m USD on presale with about 517,152,289 $Tics sold.
 - total supply is 1,361,867,964
-- Recently launched on major CEXs (MEXC and LBank)
+- Recently launched on major CEXs (MEXC and LBank)  on 30th june, coin gecko req sumitted. cmc will be updated soon.
+- Pre sale tokens will be automatically airdropped to their allocated wallet post 1 month listing, starts from 30th july they get 10% after that 1% daily for 90 days. co claim or fee needed.
 
 Respond in a friendly tone. Keep responses short, just address the query and don't add anything else..
 `;
@@ -174,7 +175,10 @@ async function isBotMentioned(ctx) {
   }
 }
 
-
+// Commands setup
+bot.telegram.setMyCommands([
+  { command: 'about', description: 'About Qubetics project' }
+]);
 
 bot.start(async (ctx) => {
   const botInfo = await bot.telegram.getMe();

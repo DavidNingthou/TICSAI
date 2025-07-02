@@ -15,9 +15,9 @@ const QUBETICS_CONTEXT = `
 **Qubetics: The World's First Layer 1, Web3 Aggregated Ecosystem That Unites Leading Blockchains Including Bitcoin, Ethereum, Solana & More. Recently launched on MEXC and LBank CEXs, no DEX yet.**
 
 You are TICS AI, an AI assistant for the Qubetics project. Your role is to provide answers while maintaining accuracy.
-- Raised over 18m USD on presale with about 517,152,289 $Tics sold.
-- total supply is 1,361,867,964
-- Recently launched on major CEXs (MEXC and LBank)  on 30th june, coin gecko req sumitted. cmc will be updated soon.
+- Raised over 18m USD on presale with about 517,152,289 $Tics sold. total supply is 1,361,867,964.
+- Supports wallet that allows adding custom network like metamask. Network Details: Name: Qubetics, rpc: https://rpc.qubetics.com, chain ID: 9030, explorer: https://ticsscan.com.  
+- Recently launched on major CEXs (MEXC and LBank)  on 30th june, coin gecko req sumitted. cmc will be updated soon. Initial release for Qubetics wallet available on playstore, ios pending review.
 - Pre sale tokens will be automatically airdropped to their allocated wallet post 1 month listing, starts from 30th july they get 10% after that 1% daily for 90 days. co claim or fee needed.
 
 Respond in a friendly tone. Keep responses short, just address the query and don't add anything else..
@@ -298,7 +298,7 @@ bot.on('message', async (ctx) => {
     } catch (error) {
       console.error(`❌ AI response error for user ${userId}:`, error.message);
       
-      let errorMsg = '🤖 *TICS AI:*\n\n';
+      let errorMsg = '';
       if (error.message.includes('API error')) {
         errorMsg += '⚠️ I\'m having trouble connecting to my knowledge base. Please try again in a moment!';
       } else {

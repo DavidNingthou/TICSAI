@@ -291,7 +291,7 @@ bot.on('message', async (ctx) => {
       
       const aiResponse = await callGeminiAPI(userQuestion);
       
-      await safeReply(ctx, `🤖 *TICS AI:*\n\n${aiResponse}`, {
+      await safeReply(ctx, `${aiResponse}`, {
         parse_mode: 'Markdown',
         reply_to_message_id: message.message_id
       });
